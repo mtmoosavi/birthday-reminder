@@ -49,6 +49,23 @@ cd android
 
 خروجی انتشار: `android/app/build/outputs/apk/release/app-release.apk`
 
+### ساخت آفلاین / Offline build
+
+ساده‌ترین راه: روی فایل `Build APK.bat` در ریشه‌ی پروژه دوبار کلیک کنید. همین.
+
+اگر یک‌بار پیش‌نیازها را نصب کرده‌اید (`npm install` و یک بیلد آنلاین)، می‌توانید هر بار بدون اینترنت APK بسازید:
+
+```bash
+npm run android:offline                          # APK آزمایشی (debug)
+.\scripts\build-offline.ps1 -Variant release     # APK انتشار (release)
+.\scripts\build-offline.ps1 -Install             # ساخت + نصب روی گوشی متصل
+.\scripts\build-offline.ps1 -GoOnline            # بار اول / به‌روزرسانی وابستگی‌ها
+```
+
+`scripts/build-offline.ps1` خودش JAVA_HOME و ANDROID_HOME را پیدا می‌کند، ساخت را
+به‌صورت `--offline` انجام می‌دهد و خروجی را در پوشه‌ی `APK builds/` کپی می‌کند.
+برای اجرا در PowerShell ویندوز همین دستورها کافی است.
+
 ### امضای دیجیتال (Release signing)
 
 فایل `keystore.properties` در ریشه پروژه (و در `.gitignore`) قرار دارد و شامل

@@ -4,6 +4,7 @@ node_modules/
 # build output
 dist/
 .apk-rebuild/
+.android-sdk/
 
 # Capacitor / Android build artifacts
 android/.gradle/

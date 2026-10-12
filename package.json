@@ -14,7 +14,8 @@
     "cap:sync": "npm run build && cap sync android",
     "cap:copy": "npm run build && cap copy android",
     "cap:open": "cap open android",
-    "android": "npm run build && cap sync android && cd android && gradlew.bat assembleDebug"
+    "android": "npm run build && cap sync android && cd android && gradlew.bat assembleDebug",
+    "android:offline": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-offline.ps1"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",

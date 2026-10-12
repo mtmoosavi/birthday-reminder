@@ -429,7 +429,7 @@ export default function App() {
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="مثلاً: سارا محمدی"
+                    placeholder="مثلاً: هما ابوالقاسمی"
                     className="rounded-2xl border-slate-200 focus:border-rose-400 focus:ring-rose-400 pr-10"
                   />
                   <Gift className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-300" />
