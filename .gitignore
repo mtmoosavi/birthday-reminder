@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.apk-rebuild/
+
+# Capacitor / Android build artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/app/release/
+android/capacitor-cordova-android-plugins/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# secrets — never commit signing material
+*.jks
+*.keystore
+keystore.properties
+*.idsig
+.env
+.env.*
+
+# APK output (built by CI)
+APK builds/
+*.apk
+
+# misc
+.DS_Store
+Thumbs.db
+*.log
+.vite/
+*.tsbuildinfo

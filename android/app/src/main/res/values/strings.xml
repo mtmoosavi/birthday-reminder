@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">یادآور تولد</string>
+    <string name="title_activity_main">یادآور تولد</string>
+    <string name="package_name">com.mtmoosavi.birthdayreminder</string>
+    <string name="custom_url_scheme">com.mtmoosavi.birthdayreminder</string>
+</resources>
