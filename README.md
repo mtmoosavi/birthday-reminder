@@ -93,7 +93,8 @@ store-assets/                 تصاویر آماده برای آپلود در �
    `cd android && ./gradlew.bat assembleRelease`
 3. فایل `app-release.apk` را آپلود کنید.
 4. آیکون، کاور و اسکرین‌شات‌ها را از `store-assets/` آپلود کنید.
-5. لینک سیاست حریم خصوصی (`docs/PRIVACY_POLICY.md`) را منتشر و وارد کنید.
+5. لینک سیاست حریم خصوصی (منتشر شده روی GitHub Pages) را وارد کنید:
+   <https://mtmoosavi.github.io/birthday-reminder/>
 
 جزئیات کامل: [`docs/STORE_LISTING.md`](docs/STORE_LISTING.md) و
 [`docs/PUBLISHING_CHECKLIST.md`](docs/PUBLISHING_CHECKLIST.md)
