@@ -1,0 +1,163 @@
+name: Release to Myket
+
+# Builds a signed release APK and publishes it to Myket (مایکت) through the
+# official partner API. Requires repository secrets:
+#   KEYSTORE_BASE64     base64 of keystore/release.keystore
+#   KEYSTORE_PASSWORD   keystore password
+#   KEY_ALIAS           key alias
+#   KEY_PASSWORD        key password
+#   MYKET_ACCESS_TOKEN  "توکن صحت‌سنجی" from the Myket developer panel
+#
+# Quick base64 (PowerShell):  [Convert]::ToBase64String([IO.File]::ReadAllBytes("keystore\release.keystore")) | Set-Clipboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: 'Release notes (Persian, shown to users)'
+        required: false
+        default: ''
+      publish:
+        description: 'Submit to Myket after building'
+        type: boolean
+        default: true
+      manual_publish:
+        description: 'Hold for manual publish after Myket approval'
+        type: boolean
+        default: false
+      rollout:
+        description: 'Staged rollout percent (1-100)'
+        required: false
+        default: '100'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # package.json is the single source of truth for the version. Gradle
+      # derives both versionName and versionCode from it, so a tag must match.
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME#v}" != "$VERSION" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${VERSION}."
+            echo "::error::Run 'npm version' to bump package.json, commit, then tag."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Android SDK packages
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0" "platform-tools" > /dev/null
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret KEYSTORE_BASE64 is not set; a release APK must be signed."
+            exit 1
+          fi
+          mkdir -p keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > keystore/release.keystore
+          echo "KEYSTORE_PATH=$PWD/keystore/release.keystore" >> "$GITHUB_ENV"
+
+      - name: Type-check and build web assets
+        run: |
+          npm run typecheck
+          npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Verify the APK is signed
+        working-directory: android/app/build/outputs/apk/release
+        run: |
+          APK="$(ls *.apk | head -n1)"
+          "$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner" verify --print-certs "$APK" > /dev/null
+          echo "Signed APK: $APK"
+          echo "APK_PATH=$PWD/$APK" >> "$GITHUB_ENV"
+
+      - name: Render release notes
+        # On a tag push we always publish; on a manual run it follows the input.
+        if: ${{ github.event_name == 'push' || inputs.publish }}
+        env:
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          if [ -n "$RELEASE_NOTES" ]; then
+            printf '%s\n' "$RELEASE_NOTES" > release-notes.md
+          else
+            printf 'نسخه %s\n' "${{ steps.version.outputs.version }}" > release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: Publish to Myket
+        if: ${{ github.event_name == 'push' || inputs.publish }}
+        env:
+          MYKET_ACCESS_TOKEN: ${{ secrets.MYKET_ACCESS_TOKEN }}
+          MYKET_ROLLOUT: ${{ inputs.rollout }}
+        run: |
+          if [ -z "$MYKET_ACCESS_TOKEN" ]; then
+            echo "::warning::MYKET_ACCESS_TOKEN is not set - skipping publish. Add the secret and re-run."
+            exit 0
+          fi
+          node scripts/publish-myket.mjs \
+            --apk "$APK_PATH" \
+            --notes-file release-notes.md \
+            --rollout "$MYKET_ROLLOUT" \
+            --yes \
+            ${{ inputs.manual_publish && '--manual' || '' }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: birthday-reminder-release-apk-${{ steps.version.outputs.version }}
+          path: android/app/build/outputs/apk/release/*.apk
+
+      - name: Create GitHub release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/*.apk
+          body_path: release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

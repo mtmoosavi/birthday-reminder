@@ -24,6 +24,7 @@ set "MODE=%~1"
 if /i "%MODE%"=="release" goto release
 if /i "%MODE%"=="install" goto install
 if /i "%MODE%"=="online"  goto online
+if /i "%MODE%"=="publish" goto publish
 if /i "%MODE%"=="menu"    goto menu
 goto debug
 
@@ -51,6 +52,31 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT%" -GoOnline
 set "RC=%ERRORLEVEL%"
 goto result
 
+:publish
+call :head "Publishing the newest APK to Myket"
+where node >nul 2>nul
+if errorlevel 1 (
+  echo.
+  echo  Node.js was not found on PATH. Install Node.js 18+ first.
+  echo.
+  pause
+  goto ask
+)
+if not exist ".myket-token" (
+  echo.
+  echo  No ".myket-token" file found in the project root.
+  echo  Create it and paste your Myket access token ("توکن صحت‌سنجی")
+  echo  from the Myket developer panel, then run this again.
+  echo.
+  pause
+  goto ask
+)
+node "scripts\publish-myket.mjs"
+set "RC=%ERRORLEVEL%"
+echo.
+pause
+goto ask
+
 :result
 echo.
 if "%RC%"=="0" (
@@ -70,6 +96,7 @@ echo    [1] Build RELEASE apk
 echo    [2] Build DEBUG apk and install to phone
 echo    [3] Build DEBUG apk again
 echo    [4] Open the "APK builds" folder
+echo    [5] Publish the newest APK to Myket
 echo    [0] Close
 echo.
 set "NEXT="
@@ -78,6 +105,7 @@ if "%NEXT%"=="1" goto release
 if "%NEXT%"=="2" goto install
 if "%NEXT%"=="3" goto debug
 if "%NEXT%"=="4" goto openfolder
+if "%NEXT%"=="5" goto publish
 if "%NEXT%"=="0" goto done
 if "%NEXT%"=="" goto done
 goto ask
@@ -98,6 +126,7 @@ echo    [2] Build RELEASE apk      offline
 echo    [3] Build DEBUG and install to phone
 echo    [4] Refresh dependencies   online
 echo    [5] Open "APK builds" folder
+echo    [6] Publish newest APK to Myket
 echo    [0] Close
 echo.
 set "NEXT="
@@ -107,6 +136,7 @@ if "%NEXT%"=="2" goto release
 if "%NEXT%"=="3" goto install
 if "%NEXT%"=="4" goto online
 if "%NEXT%"=="5" goto openfolder
+if "%NEXT%"=="6" goto publish
 if "%NEXT%"=="0" goto done
 if "%NEXT%"=="" goto done
 goto menu

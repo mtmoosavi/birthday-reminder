@@ -14,6 +14,36 @@ if (keystorePropertiesFile.exists()) {
     hasReleaseKeystore = keystoreProperties["storeFile"] != null
 }
 
+// CI / environment overrides ------------------------------------------------
+// A fresh clone (and CI) has no keystore.properties because it is git-ignored.
+// When KEYSTORE_PATH is present we sign from environment variables instead, so
+// the release build never needs a checked-in credentials file.
+def envKeystorePath = System.getenv("KEYSTORE_PATH")
+def hasEnvKeystore = envKeystorePath != null && !envKeystorePath.trim().isEmpty() && file(envKeystorePath).exists()
+def resolveStoreFile = { hasReleaseKeystore ? file(keystoreProperties["storeFile"]) : file(envKeystorePath) }
+def resolveStorePassword = { hasReleaseKeystore ? keystoreProperties["storePassword"] : System.getenv("KEYSTORE_PASSWORD") }
+def resolveKeyAlias = { hasReleaseKeystore ? keystoreProperties["keyAlias"] : System.getenv("KEY_ALIAS") }
+def resolveKeyPassword = { hasReleaseKeystore ? keystoreProperties["keyPassword"] : System.getenv("KEY_PASSWORD") }
+def canSignRelease = hasReleaseKeystore || hasEnvKeystore
+
+def envVersionCode = System.getenv("ANDROID_VERSION_CODE")
+def envVersionName = System.getenv("ANDROID_VERSION_NAME")
+
+// Single source of truth for the version: package.json. Overridable from the
+// environment so CI can stamp a version without editing files.
+def packageJsonFile = rootProject.file("../package.json")
+def packageVersion = packageJsonFile.exists()
+    ? new groovy.json.JsonSlurper().parseText(packageJsonFile.text).version
+    : "1.0.0"
+// 1.2.3 -> 10203, so versionCode always grows with the version name.
+def versionCodeFromName = { String name ->
+    def matcher = name =~ /^(\d+)\.(\d+)\.(\d+)/
+    if (!matcher.find()) return 1
+    return matcher.group(1).toInteger() * 10000 + matcher.group(2).toInteger() * 100 + matcher.group(3).toInteger()
+}
+def resolvedVersionName = envVersionName ?: packageVersion
+def resolvedVersionCode = envVersionCode ? envVersionCode.toInteger() : versionCodeFromName(resolvedVersionName)
+
 android {
     namespace "com.mtmoosavi.birthdayreminder"
     compileSdk rootProject.ext.compileSdkVersion
@@ -21,8 +51,8 @@ android {
         applicationId "com.mtmoosavi.birthdayreminder"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode resolvedVersionCode
+        versionName resolvedVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -30,13 +60,13 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    if (hasReleaseKeystore) {
+    if (canSignRelease) {
         signingConfigs {
             release {
-                storeFile file(keystoreProperties["storeFile"])
-                storePassword keystoreProperties["storePassword"]
-                keyAlias keystoreProperties["keyAlias"]
-                keyPassword keystoreProperties["keyPassword"]
+                storeFile resolveStoreFile()
+                storePassword resolveStorePassword()
+                keyAlias resolveKeyAlias()
+                keyPassword resolveKeyPassword()
             }
         }
     }
@@ -44,7 +74,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (hasReleaseKeystore) {
+            if (canSignRelease) {
                 signingConfig signingConfigs.release
             }
         }
@@ -53,6 +83,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+if (!canSignRelease) {
+    logger.warn("No release keystore found (keystore.properties or KEYSTORE_PATH); the release APK will be unsigned.")
 }
 
 repositories {

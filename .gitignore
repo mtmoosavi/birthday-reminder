@@ -25,6 +25,8 @@ keystore.properties
 *.idsig
 .env
 .env.*
+.myket-token
+release-notes.md
 
 # APK output (built by CI)
 APK builds/
