@@ -34,6 +34,25 @@ cd android
 - [ ] تعیین رده‌بندی سنی: همه سنین
 - [ ] تکمیل احراز هویت حساب توسعه‌دهنده
 
+## انتشار خودکار در مایکت
+
+دیگر لازم نیست APK را دستی آپلود کنید. راهنمای کامل:
+[`docs/PUBLISHING_AUTOMATION.md`](PUBLISHING_AUTOMATION.md)
+
+```powershell
+# محلی: ساخت نسخه‌ی امضاشده و ارسال برای بررسی
+.\scripts\build-offline.ps1 -Variant release
+npm run publish:myket -- --notes "بهبود سرعت و رفع اشکال ها"
+
+# وضعیت بسته‌ها
+npm run publish:myket:status
+```
+
+- [ ] Secretهای مخزن تنظیم شده‌اند: `MYKET_ACCESS_TOKEN`، `KEYSTORE_BASE64`،
+      `KEYSTORE_PASSWORD`، `KEY_ALIAS`، `KEY_PASSWORD`
+- [ ] فایل `.myket-token` (برای اجرای محلی) ساخته شده و کامیت نشده است
+- [ ] هر انتشار با تگ `v*` یا از تب Actions پیکربندی شده است
+
 ## نکات امنیتی مهم
 
 - فایل `keystore/release.keystore` را در جای امن پشتیبان بگیرید.

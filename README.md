@@ -93,9 +93,11 @@ docs/
   PRIVACY_POLICY.md           سیاست حریم خصوصی (برای فروشگاه)
   STORE_LISTING.md            متن و اطلاعات فروشگاه بازار/مایکت
   PUBLISHING_CHECKLIST.md     چک‌لیست انتشار
+  PUBLISHING_AUTOMATION.md    انتشار خودکار در مایکت (API) و راهنمای توکن‌ها
 scripts/
   generate-icons.mjs          ساخت آیکون‌ها از تصویر اصلی
   generate-store-assets.mjs   ساخت تصاویر فروشگاه
+  publish-myket.mjs           ارسال APK به مایکت از طریق API رسمی
 store-assets/                 تصاویر آماده برای آپلود در فروشگاه
 ```
 
@@ -108,13 +110,20 @@ store-assets/                 تصاویر آماده برای آپلود در �
    [مایکت](https://developer.myket.ir) بسازید (احراز هویت با کد ملی + شبا).
 2. `npm run build && npx cap sync android` سپس
    `cd android && ./gradlew.bat assembleRelease`
-3. فایل `app-release.apk` را آپلود کنید.
-4. آیکون، کاور و اسکرین‌شات‌ها را از `store-assets/` آپلود کنید.
-5. لینک سیاست حریم خصوصی (منتشر شده روی GitHub Pages) را وارد کنید:
+3. برای **مایکت** نیازی به آپلود دستی نیست: آخرین APK را با یک فرمان بفرستید.
+   ```powershell
+   npm run publish:myket:status                       # وضعیت نسخه‌ها
+   npm run publish:myket -- --notes "بهبود سرعت"      # ارسال برای بررسی
+   ```
+   یا به‌صورت خودکار از GitHub Actions (تب Actions → «Release to Myket»).
+4. برای **بازار** فایل `app-release.apk` را از پنل پیشخوان آپلود کنید.
+5. آیکون، کاور و اسکرین‌شات‌ها را از `store-assets/` آپلود کنید.
+6. لینک سیاست حریم خصوصی (منتشر شده روی GitHub Pages) را وارد کنید:
    <https://mtmoosavi.github.io/birthday-reminder/>
 
 جزئیات کامل: [`docs/STORE_LISTING.md`](docs/STORE_LISTING.md) و
-[`docs/PUBLISHING_CHECKLIST.md`](docs/PUBLISHING_CHECKLIST.md)
+[`docs/PUBLISHING_CHECKLIST.md`](docs/PUBLISHING_CHECKLIST.md) —
+انتشار خودکار مایکت: [`docs/PUBLISHING_AUTOMATION.md`](docs/PUBLISHING_AUTOMATION.md)
 
 ## مجوزها / Permissions
 
