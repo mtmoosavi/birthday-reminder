@@ -8,6 +8,21 @@
     <link rel="icon" type="image/png" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <title>یادآور تولد</title>
+    <script>
+      // Apply the saved night-mode preference before first paint.
+      (function () {
+        try {
+          var stored = localStorage.getItem('birthday-reminder-theme');
+          var dark = stored
+            ? stored === 'dark'
+            : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (dark && meta) meta.setAttribute('content', '#0f172a');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

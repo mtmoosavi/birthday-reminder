@@ -13,7 +13,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
+import type { ThemeMode } from '@/lib/theme';
 import {
   OFFSET_OPTIONS,
   offsetLabel,
@@ -32,6 +34,8 @@ interface SettingsScreenProps {
   birthdayCount: number;
   onClearAll: () => void;
   onBack: () => void;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -46,6 +50,8 @@ export function SettingsScreen({
   birthdayCount,
   onClearAll,
   onBack,
+  theme,
+  onToggleTheme,
 }: SettingsScreenProps) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'idle' | 'ok' | 'fail'>('idle');
@@ -76,10 +82,10 @@ export function SettingsScreen({
   const permissionGranted = permission === 'granted';
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-br from-rose-100 via-orange-50 to-amber-100">
+    <div className="min-h-screen relative bg-gradient-to-br from-rose-100 via-orange-50 to-amber-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-gradient-to-br from-rose-200 to-orange-200 opacity-40 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-gradient-to-br from-amber-200 to-yellow-200 opacity-40 blur-3xl" />
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-gradient-to-br from-rose-200 to-orange-200 opacity-40 dark:opacity-20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-gradient-to-br from-amber-200 to-yellow-200 opacity-40 dark:opacity-20 blur-3xl" />
       </div>
 
       <div className="relative max-w-md mx-auto px-4 pt-6 pb-24 safe-top safe-bottom">
@@ -88,18 +94,23 @@ export function SettingsScreen({
           <button
             onClick={onBack}
             aria-label="بازگشت"
-            className="p-2.5 rounded-2xl bg-white/80 backdrop-blur shadow-sm text-slate-600 hover:text-rose-500 hover:bg-white transition-all active:scale-95"
+            className="p-2.5 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur shadow-sm text-slate-600 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-95"
           >
             <ChevronLeft className="w-5 h-5 rotate-180" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-slate-800">تنظیمات</h1>
-            <p className="text-xs text-slate-500">مدیریت یادآورها و اعلان‌ها</p>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">تنظیمات</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">مدیریت یادآورها و اعلان‌ها</p>
           </div>
+          <ThemeToggle
+            mode={theme}
+            onToggle={onToggleTheme}
+            className="mr-auto"
+          />
         </header>
 
         {/* Master switch */}
-        <section className="rounded-3xl bg-white/95 backdrop-blur border-0 shadow-sm p-5 mb-4">
+        <section className="rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur border-0 shadow-sm p-5 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -107,14 +118,14 @@ export function SettingsScreen({
                   'p-2.5 rounded-2xl',
                   settings.enabled
                     ? 'bg-gradient-to-br from-rose-500 to-orange-500 text-white'
-                    : 'bg-slate-100 text-slate-400'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
                 )}
               >
                 {settings.enabled ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
               </div>
               <div>
-                <p className="font-semibold text-slate-800">یادآور تولد</p>
-                <p className="text-xs text-slate-500">
+                <p className="font-semibold text-slate-800 dark:text-slate-100">یادآور تولد</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {settings.enabled ? 'فعال — اعلان‌ها ارسال می‌شوند' : 'غیرفعال'}
                 </p>
               </div>
@@ -133,24 +144,24 @@ export function SettingsScreen({
             className={cn(
               'rounded-3xl p-5 mb-4 border shadow-sm',
               permission === 'denied'
-                ? 'bg-rose-50 border-rose-200'
-                : 'bg-amber-50 border-amber-200'
+                ? 'bg-rose-50 dark:bg-rose-500/15 border-rose-200 dark:border-rose-500/40'
+                : 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30'
             )}
           >
             <div className="flex items-start gap-3">
               <ShieldAlert
                 className={cn(
                   'w-5 h-5 mt-0.5 shrink-0',
-                  permission === 'denied' ? 'text-rose-500' : 'text-amber-500'
+                  permission === 'denied' ? 'text-rose-500 dark:text-rose-400' : 'text-amber-500 dark:text-amber-400'
                 )}
               />
               <div className="flex-1">
-                <p className="font-semibold text-slate-800 text-sm">
+                <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
                   {permission === 'denied'
                     ? 'اجازه اعلان رد شده است'
                     : 'اجازه اعلان داده نشده'}
                 </p>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
                   {permission === 'denied'
                     ? 'برای دریافت یادآورها، از تنظیمات گوشی > برنامه‌ها > یادآور تولد، اجازه اعلان را فعال کنید.'
                     : 'برای اینکه یادآورها به گوشی شما ارسال شوند، اجازه اعلان لازم است.'}
@@ -170,22 +181,22 @@ export function SettingsScreen({
         )}
 
         {permissionGranted && (
-          <section className="rounded-3xl bg-emerald-50 border border-emerald-200 p-4 mb-4 flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-            <p className="text-sm text-emerald-800">
+          <section className="rounded-3xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 p-4 mb-4 flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <p className="text-sm text-emerald-800 dark:text-emerald-200">
               اعلان‌ها فعال است — یادآورها به گوشی شما ارسال می‌شوند.
             </p>
           </section>
         )}
 
         {/* Reminder timing */}
-        <section className="rounded-3xl bg-white/95 backdrop-blur shadow-sm p-5 mb-4">
+        <section className="rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur shadow-sm p-5 mb-4">
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-4 h-4 text-rose-500" />
-            <h2 className="font-semibold text-slate-800">زمان اعلان</h2>
+            <Clock className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+            <h2 className="font-semibold text-slate-800 dark:text-slate-100">زمان اعلان</h2>
           </div>
 
-          <p className="text-xs text-slate-500 mb-2">ساعت</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">ساعت</p>
           <div className="grid grid-cols-6 gap-2 mb-4">
             {HOURS.map((h) => (
               <button
@@ -195,7 +206,7 @@ export function SettingsScreen({
                   'py-2 rounded-xl text-sm font-medium transition-all active:scale-95',
                   settings.hour === h
                     ? 'bg-gradient-to-l from-rose-500 to-orange-500 text-white shadow-md shadow-rose-200'
-                    : 'bg-slate-50 text-slate-600 hover:bg-rose-50'
+                    : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/15'
                 )}
               >
                 {h}
@@ -203,7 +214,7 @@ export function SettingsScreen({
             ))}
           </div>
 
-          <p className="text-xs text-slate-500 mb-2">دقیقه</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">دقیقه</p>
           <div className="grid grid-cols-6 gap-2">
             {MINUTES.map((m) => (
               <button
@@ -213,7 +224,7 @@ export function SettingsScreen({
                   'py-2 rounded-xl text-sm font-medium transition-all active:scale-95',
                   settings.minute === m
                     ? 'bg-gradient-to-l from-rose-500 to-orange-500 text-white shadow-md shadow-rose-200'
-                    : 'bg-slate-50 text-slate-600 hover:bg-rose-50'
+                    : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/15'
                 )}
               >
                 {m.toString().padStart(2, '0')}
@@ -221,18 +232,18 @@ export function SettingsScreen({
             ))}
           </div>
 
-          <p className="text-xs text-slate-400 mt-4">
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-4">
             یادآورها هر روز ساعت {formatTime(settings.hour, settings.minute)} بررسی و ارسال می‌شوند.
           </p>
         </section>
 
         {/* When to remind */}
-        <section className="rounded-3xl bg-white/95 backdrop-blur shadow-sm p-5 mb-4">
+        <section className="rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur shadow-sm p-5 mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <Bell className="w-4 h-4 text-rose-500" />
-            <h2 className="font-semibold text-slate-800">چه زمانی یادآوری شود؟</h2>
+            <Bell className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+            <h2 className="font-semibold text-slate-800 dark:text-slate-100">چه زمانی یادآوری شود؟</h2>
           </div>
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
             می‌توانید چند زمان مختلف را همزمان انتخاب کنید.
           </p>
 
@@ -247,7 +258,7 @@ export function SettingsScreen({
                     'px-4 py-2.5 rounded-2xl text-sm font-medium transition-all active:scale-95',
                     active
                       ? 'bg-gradient-to-l from-rose-500 to-orange-500 text-white shadow-md shadow-rose-200'
-                      : 'bg-slate-50 text-slate-600 hover:bg-rose-50'
+                      : 'bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-500/15'
                   )}
                 >
                   {offsetLabel(days)}
@@ -257,7 +268,7 @@ export function SettingsScreen({
           </div>
 
           {settings.daysBefore.length === 0 && (
-            <p className="text-xs text-rose-500 mt-3 flex items-center gap-1.5">
+            <p className="text-xs text-rose-500 dark:text-rose-400 mt-3 flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5" />
               حداقل یک زمان یادآوری انتخاب کنید.
             </p>
@@ -265,19 +276,19 @@ export function SettingsScreen({
         </section>
 
         {/* Test notification */}
-        <section className="rounded-3xl bg-white/95 backdrop-blur shadow-sm p-5 mb-4">
+        <section className="rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur shadow-sm p-5 mb-4">
           <div className="flex items-center gap-2 mb-1">
-            <Send className="w-4 h-4 text-rose-500" />
-            <h2 className="font-semibold text-slate-800">آزمایش اعلان</h2>
+            <Send className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+            <h2 className="font-semibold text-slate-800 dark:text-slate-100">آزمایش اعلان</h2>
           </div>
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
             یک اعلان آزمایشی بفرست تا مطمئن شوی اعلان‌ها روی گوشی کار می‌کنند.
           </p>
           <Button
             onClick={handleTest}
             disabled={testing || !permissionGranted}
             variant="outline"
-            className="w-full h-11 rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+            className="w-full h-11 rounded-2xl border-rose-200 dark:border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/15 disabled:opacity-50"
           >
             {testing ? (
               <Loader2 className="w-4 h-4 ml-2 animate-spin" />
@@ -287,21 +298,21 @@ export function SettingsScreen({
             ارسال اعلان آزمایشی
           </Button>
           {testResult === 'ok' && (
-            <p className="text-xs text-emerald-600 mt-3">
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-3">
               اعلان آزمایشی ارسال شد. اگر آن را نمی‌بینید، تنظیمات اعلان گوشی را بررسی کنید.
             </p>
           )}
           {testResult === 'fail' && (
-            <p className="text-xs text-rose-500 mt-3">
+            <p className="text-xs text-rose-500 dark:text-rose-400 mt-3">
               ارسال اعلان ناموفق بود. لطفاً اجازه اعلان را فعال کنید.
             </p>
           )}
         </section>
 
         {/* Danger zone */}
-        <section className="rounded-3xl bg-white/95 backdrop-blur shadow-sm p-5">
-          <h2 className="font-semibold text-slate-800 mb-1">داده‌ها</h2>
-          <p className="text-xs text-slate-500 mb-4">
+        <section className="rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur shadow-sm p-5">
+          <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-1">داده‌ها</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
             {birthdayCount > 0
               ? `${birthdayCount} تولد ذخیره شده — فقط روی همین گوشی، بدون ارسال به اینترنت.`
               : 'هنوز تولدی ذخیره نشده است.'}
@@ -311,7 +322,7 @@ export function SettingsScreen({
               onClick={() => setConfirmClear(true)}
               disabled={birthdayCount === 0}
               variant="outline"
-              className="w-full h-11 rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-40"
+              className="w-full h-11 rounded-2xl border-rose-200 dark:border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/15 disabled:opacity-40"
             >
               <Trash2 className="w-4 h-4 ml-2" />
               حذف همه تولدها
@@ -338,7 +349,7 @@ export function SettingsScreen({
           )}
         </section>
 
-        <p className="text-center text-xs text-slate-400 mt-6">یادآور تولد — نسخه ۱.۰.۰</p>
+        <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6">یادآور تولد — نسخه ۱.۰.۰</p>
       </div>
     </div>
   );

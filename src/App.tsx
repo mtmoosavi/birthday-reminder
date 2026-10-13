@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { SettingsScreen } from "@/components/SettingsScreen";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { toJalali, getDaysUntil, getMonthName } from "@/lib/jalali";
+import { loadTheme, saveTheme, applyTheme, type ThemeMode } from "@/lib/theme";
 import {
   loadSettings,
   saveSettings,
@@ -77,10 +79,16 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<ReminderSettings>(() => loadSettings());
   const [permission, setPermission] = useState<string>("prompt");
+  const [theme, setTheme] = useState<ThemeMode>(() => loadTheme());
 
   useEffect(() => {
     setBirthdays(readStoredBirthdays());
   }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+    saveTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     try {
@@ -255,12 +263,14 @@ export default function App() {
         birthdayCount={birthdays.length}
         onClearAll={clearAllBirthdays}
         onBack={() => setShowSettings(false)}
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
       />
     );
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-rose-100 via-orange-50 to-amber-100" dir="rtl">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-rose-100 via-orange-50 to-amber-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" dir="rtl">
       {/* Decorative background elements */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Floating balloons */}
@@ -269,7 +279,7 @@ export default function App() {
         <div className="absolute bottom-32 left-4 w-14 h-18 rounded-full bg-gradient-to-b from-pink-300 to-pink-400 opacity-20 blur-sm animate-float-slow" />
         
         {/* Sparkles */}
-        <div className="absolute top-1/3 right-8 text-rose-300 opacity-40 animate-twinkle">
+        <div className="absolute top-1/3 right-8 text-rose-300 dark:text-rose-400/70 opacity-40 animate-twinkle">
           <Star className="w-6 h-6 fill-current" />
         </div>
         <div className="absolute top-2/3 left-10 text-amber-300 opacity-40 animate-twinkle-delayed">
@@ -280,9 +290,9 @@ export default function App() {
         </div>
 
         {/* Soft gradient blobs */}
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-gradient-to-br from-rose-200 to-orange-200 opacity-40 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-gradient-to-br from-amber-200 to-yellow-200 opacity-40 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-gradient-to-br from-pink-200 to-rose-200 opacity-30 blur-3xl" />
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-gradient-to-br from-rose-200 to-orange-200 opacity-40 dark:opacity-20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-gradient-to-br from-amber-200 to-yellow-200 opacity-40 dark:opacity-20 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-gradient-to-br from-pink-200 to-rose-200 opacity-30 dark:opacity-15 blur-3xl" />
       </div>
 
       {/* Confetti animation */}
@@ -304,15 +314,16 @@ export default function App() {
       )}
 
       <div className="relative max-w-md mx-auto px-4 py-6 pb-24">
-        {/* Header */}
-        <div className="flex justify-start mb-2">
+      {/* Header */}
+        <div className="flex items-center justify-between mb-2">
           <button
             onClick={() => setShowSettings(true)}
             aria-label="تنظیمات"
-            className="p-2.5 rounded-2xl bg-white/70 backdrop-blur shadow-sm text-slate-500 hover:text-rose-500 hover:bg-white transition-all active:scale-95"
+            className="p-2.5 rounded-2xl bg-white/70 dark:bg-slate-900/70 backdrop-blur shadow-sm text-slate-500 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-95"
           >
             <Settings className="w-5 h-5" />
           </button>
+          <ThemeToggle mode={theme} onToggle={() => setTheme(theme === "dark" ? "light" : "dark")} />
         </div>
         <header className="mb-8 text-center">
           <div className="relative inline-block mb-3">
@@ -324,9 +335,9 @@ export default function App() {
               <Sparkles className="w-4 h-4 fill-current" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-1">یادآور تولد</h1>
-          <p className="text-sm text-slate-500">هیچ روز خاصی را از دست نده</p>
-          <div className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium shadow-sm">
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-1">یادآور تولد</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">هیچ روز خاصی را از دست نده</p>
+          <div className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium shadow-sm">
             <Bell className="w-3.5 h-3.5 animate-ring" />
             یادآوری یک هفته قبل
           </div>
@@ -410,41 +421,41 @@ export default function App() {
             افزودن تولد
           </Button>
         ) : (
-          <Card className="mb-6 rounded-3xl border-0 shadow-xl shadow-rose-100 bg-white/95 backdrop-blur">
+          <Card className="mb-6 rounded-3xl border-0 shadow-xl shadow-rose-100 bg-white/95 dark:bg-slate-900/95 backdrop-blur">
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-slate-800 text-lg">تولد جدید</h3>
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-lg">تولد جدید</h3>
                 <button
                   onClick={() => setShowForm(false)}
-                  className="text-slate-400 hover:text-slate-600 text-sm transition-colors"
+                  className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 text-sm transition-colors"
                 >
                   انصراف
                 </button>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm text-slate-600">نام</Label>
+                <Label htmlFor="name" className="text-sm text-slate-600 dark:text-slate-300">نام</Label>
                 <div className="relative">
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="مثلاً: هما ابوالقاسمی"
-                    className="rounded-2xl border-slate-200 focus:border-rose-400 focus:ring-rose-400 pr-10"
+                    className="rounded-2xl border-slate-200 dark:border-slate-700 focus:border-rose-400 focus:ring-rose-400 pr-10"
                   />
-                  <Gift className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-300" />
+                  <Gift className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-300 dark:text-rose-400/70" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm text-slate-600">تاریخ تولد (شمسی)</Label>
+                <Label className="text-sm text-slate-600 dark:text-slate-300">تاریخ تولد (شمسی)</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {/* Year Picker */}
                   <button
                     onClick={() => setActivePicker("year")}
                     className={cn(
-                      "p-2.5 border rounded-2xl text-sm transition-all hover:border-rose-300 active:scale-95 flex items-center justify-between gap-1",
-                      year ? "border-rose-300 bg-rose-50 text-slate-800" : "border-slate-200 bg-white text-slate-400"
+                      "p-2.5 border rounded-2xl text-sm transition-all hover:border-rose-300 dark:hover:border-rose-500/50 active:scale-95 flex items-center justify-between gap-1",
+                      year ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/15 text-slate-800 dark:text-slate-100" : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500"
                     )}
                   >
                     <span className="truncate">{year || "سال"}</span>
@@ -455,8 +466,8 @@ export default function App() {
                   <button
                     onClick={() => setActivePicker("month")}
                     className={cn(
-                      "p-2.5 border rounded-2xl text-sm transition-all hover:border-rose-300 active:scale-95 flex items-center justify-between gap-1",
-                      month ? "border-rose-300 bg-rose-50 text-slate-800" : "border-slate-200 bg-white text-slate-400"
+                      "p-2.5 border rounded-2xl text-sm transition-all hover:border-rose-300 dark:hover:border-rose-500/50 active:scale-95 flex items-center justify-between gap-1",
+                      month ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/15 text-slate-800 dark:text-slate-100" : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500"
                     )}
                   >
                     <span className="truncate">{month ? MONTHS[parseInt(month) - 1] : "ماه"}</span>
@@ -467,8 +478,8 @@ export default function App() {
                   <button
                     onClick={() => setActivePicker("day")}
                     className={cn(
-                      "p-2.5 border rounded-2xl text-sm transition-all hover:border-rose-300 active:scale-95 flex items-center justify-between gap-1",
-                      day ? "border-rose-300 bg-rose-50 text-slate-800" : "border-slate-200 bg-white text-slate-400"
+                      "p-2.5 border rounded-2xl text-sm transition-all hover:border-rose-300 dark:hover:border-rose-500/50 active:scale-95 flex items-center justify-between gap-1",
+                      day ? "border-rose-300 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-500/15 text-slate-800 dark:text-slate-100" : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500"
                     )}
                   >
                     <span className="truncate">{day || "روز"}</span>
@@ -478,14 +489,14 @@ export default function App() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="note" className="text-sm text-slate-600">یادداشت (اختیاری)</Label>
+                <Label htmlFor="note" className="text-sm text-slate-600 dark:text-slate-300">یادداشت (اختیاری)</Label>
                 <div className="relative">
                   <Input
                     id="note"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="مثلاً: کیک شکلاتی دوست دارد"
-                    className="rounded-2xl border-slate-200 focus:border-rose-400 focus:ring-rose-400 pr-10"
+                    className="rounded-2xl border-slate-200 dark:border-slate-700 focus:border-rose-400 focus:ring-rose-400 pr-10"
                   />
                   <Music className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-300" />
                 </div>
@@ -506,14 +517,14 @@ export default function App() {
         {/* Birthday list */}
         {sortedBirthdays.length === 0 ? (
           <div className="text-center py-16">
-            <div className="relative inline-flex p-6 rounded-3xl bg-white/60 backdrop-blur mb-4 shadow-lg shadow-rose-100">
-              <Gift className="w-12 h-12 text-rose-300" />
+            <div className="relative inline-flex p-6 rounded-3xl bg-white/60 dark:bg-slate-900/60 backdrop-blur mb-4 shadow-lg shadow-rose-100">
+              <Gift className="w-12 h-12 text-rose-300 dark:text-rose-400/70" />
               <div className="absolute -top-2 -right-2 text-amber-300 animate-twinkle">
                 <Star className="w-4 h-4 fill-current" />
               </div>
             </div>
-            <h3 className="font-semibold text-slate-700 mb-1 text-lg">هنوز تولدی ثبت نشده</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="font-semibold text-slate-700 dark:text-slate-200 mb-1 text-lg">هنوز تولدی ثبت نشده</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               اولین تولد را اضافه کنید و جشن بگیرید!
             </p>
           </div>
@@ -530,8 +541,8 @@ export default function App() {
                   className={cn(
                     "rounded-3xl border-0 shadow-sm transition-all hover:shadow-md hover:scale-[1.01]",
                     status === "today" && "bg-gradient-to-l from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-200",
-                    status === "week" && "bg-white/90 border-r-4 border-r-orange-400 backdrop-blur",
-                    status === "later" && "bg-white/70 backdrop-blur"
+                    status === "week" && "bg-white/90 dark:bg-slate-900/90 border-r-4 border-r-orange-400 backdrop-blur",
+                    status === "later" && "bg-white/70 dark:bg-slate-900/70 backdrop-blur"
                   )}
                 >
                   <CardContent className="p-4">
@@ -539,20 +550,20 @@ export default function App() {
                       <div className="flex items-center gap-3">
                         <div className={cn(
                           "w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow-sm",
-                          status === "today" ? "bg-white/20 text-white" : "bg-gradient-to-br from-rose-100 to-orange-100 text-rose-500"
+                          status === "today" ? "bg-white/20 text-white" : "bg-gradient-to-br from-rose-100 to-orange-100 text-rose-500 dark:from-rose-500/25 dark:to-orange-500/25 dark:text-rose-400"
                         )}>
                           {b.name.charAt(0)}
                         </div>
                         <div>
                           <h3 className={cn(
                             "font-semibold",
-                            status === "today" ? "text-white" : "text-slate-800"
+                            status === "today" ? "text-white" : "text-slate-800 dark:text-slate-100"
                           )}>
                             {b.name}
                           </h3>
                           <p className={cn(
                             "text-xs",
-                            status === "today" ? "text-white/80" : "text-slate-500"
+                            status === "today" ? "text-white/80" : "text-slate-500 dark:text-slate-400"
                           )}>
                             {b.day} {getMonthName(b.month)} {b.year}
                             {b.note && ` • ${b.note}`}
@@ -564,19 +575,19 @@ export default function App() {
                         <div className="text-left">
                           <div className={cn(
                             "text-sm font-semibold",
-                            status === "today" ? "text-white" : "text-slate-700"
+                            status === "today" ? "text-white" : "text-slate-700 dark:text-slate-200"
                           )}>
                             {status === "today" ? "امروز!" : status === "tomorrow" ? "فردا" : `${days} روز`}
                           </div>
                           {status === "week" && (
-                            <div className="text-[10px] text-orange-500 font-medium">این هفته</div>
+                            <div className="text-[10px] text-orange-500 dark:text-orange-400 font-medium">این هفته</div>
                           )}
                         </div>
                         <button
                           onClick={() => removeBirthday(b.id)}
                           className={cn(
                             "p-2 rounded-xl transition-all hover:scale-110 active:scale-95",
-                            status === "today" ? "text-white/70 hover:text-white hover:bg-white/10" : "text-slate-300 hover:text-rose-500 hover:bg-rose-50"
+                            status === "today" ? "text-white/70 hover:text-white hover:bg-white/10" : "text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/15"
                           )}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -604,22 +615,22 @@ export default function App() {
           />
 
           {/* Bottom Sheet */}
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden">
             {/* Drag handle */}
             <div className="pt-3 pb-1 flex justify-center">
-              <div className="w-12 h-1.5 rounded-full bg-slate-200" />
+              <div className="w-12 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700" />
             </div>
 
             {/* Header */}
-            <div className="px-6 py-3 flex items-center justify-between border-b border-slate-100">
-              <h3 className="font-semibold text-slate-800">
+            <div className="px-6 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-semibold text-slate-800 dark:text-slate-100">
                 {activePicker === "year" && "انتخاب سال"}
                 {activePicker === "month" && "انتخاب ماه"}
                 {activePicker === "day" && "انتخاب روز"}
               </h3>
               <button
                 onClick={() => setActivePicker(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                className="p-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -627,7 +638,7 @@ export default function App() {
 
             {/* Selected value display */}
             <div className="px-6 py-2 text-center">
-              <span className="text-2xl font-bold text-rose-500">{getPickerDisplay()}</span>
+              <span className="text-2xl font-bold text-rose-500 dark:text-rose-400">{getPickerDisplay()}</span>
             </div>
 
             {/* Scrollable list */}
@@ -643,7 +654,7 @@ export default function App() {
                       (activePicker === "month" && month === item.value) ||
                       (activePicker === "day" && day === item.value)
                         ? "bg-gradient-to-l from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-200"
-                        : "bg-slate-50 text-slate-700 hover:bg-rose-50 hover:text-rose-600"
+                        : "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-500/15 hover:text-rose-600 dark:hover:text-rose-400"
                     )}
                   >
                     {item.label}
