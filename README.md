@@ -116,6 +116,7 @@ scripts/
   publish-myket.mjs           ارسال APK به مایکت از طریق API رسمی
   sync-ios-version.mjs        همگام‌سازی نسخه با پروژه‌ی Xcode
 store-assets/                 تصاویر آماده برای آپلود در فروشگاه
+CHANGELOG.md                  متن تغییرات هر نسخه (منبع release notes مایکت)
 ```
 
 ## انتشار در بازار و مایکت
@@ -130,8 +131,10 @@ store-assets/                 تصاویر آماده برای آپلود در �
 3. برای **مایکت** نیازی به آپلود دستی نیست: آخرین APK را با یک فرمان بفرستید.
    ```powershell
    npm run publish:myket:status                       # وضعیت نسخه‌ها
-   npm run publish:myket -- --notes "بهبود سرعت"      # ارسال برای بررسی
+   npm run publish:myket                              # ارسال برای بررسی
    ```
+   متن «تغییرات این نسخه» خودکار از `CHANGELOG.md` خوانده می‌شود؛ قبل از تگ زدن
+   بخش نسخه‌ی جدید را همان‌جا بنویسید (پیش‌نمایش: `npm run publish:myket:notes`).
    یا به‌صورت خودکار از GitHub Actions (تب Actions → «Release to Myket»).
 4. برای **بازار** فایل `app-release.apk` را از پنل پیشخوان آپلود کنید.
 5. آیکون، کاور و اسکرین‌شات‌ها را از `store-assets/` آپلود کنید.

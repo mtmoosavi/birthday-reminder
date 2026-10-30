@@ -20,7 +20,8 @@
     "android": "npm run build && cap sync android && cd android && gradlew.bat assembleDebug",
     "android:offline": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-offline.ps1",
     "publish:myket": "node scripts/publish-myket.mjs",
-    "publish:myket:status": "node scripts/publish-myket.mjs --status"
+    "publish:myket:status": "node scripts/publish-myket.mjs --status",
+    "publish:myket:notes": "node scripts/publish-myket.mjs --print-notes"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",

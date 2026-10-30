@@ -119,6 +119,9 @@ jobs:
 
       - name: Render release notes
         # On a tag push we always publish; on a manual run it follows the input.
+        # Without an explicit input the notes come from CHANGELOG.md (see
+        # scripts/publish-myket.mjs --print-notes), so a release never ships
+        # with an empty "what's new" box on the store.
         if: ${{ github.event_name == 'push' || inputs.publish }}
         env:
           RELEASE_NOTES: ${{ inputs.release_notes }}
@@ -126,7 +129,7 @@ jobs:
           if [ -n "$RELEASE_NOTES" ]; then
             printf '%s\n' "$RELEASE_NOTES" > release-notes.md
           else
-            printf 'نسخه %s\n' "${{ steps.version.outputs.version }}" > release-notes.md
+            node scripts/publish-myket.mjs --print-notes > release-notes.md
           fi
           cat release-notes.md
 

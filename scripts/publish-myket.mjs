@@ -17,6 +17,9 @@
  * git-ignored `.myket-token` file. Never ship it inside the app.
  *
  * Usage:
+ *   node scripts/publish-myket.mjs --print-notes        # notes for the current version
+ *   node scripts/publish-myket.mjs --status --json      # raw API payload
+ *   node scripts/publish-myket.mjs --skip-upload --yes  # re-submit an already uploaded file
  *   node scripts/publish-myket.mjs --status
  *   node scripts/publish-myket.mjs --apk "APK builds/app-release.apk" --notes "رفع اشکال"
  *   node scripts/publish-myket.mjs --no-commit          # upload only, don't submit
@@ -36,6 +39,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_PACKAGE = 'com.mtmoosavi.birthdayreminder';
 const DEFAULT_TITLE = 'یادآور تولد';
 const API_ROOT = 'https://developer.myket.ir/api/partners/applications';
+const VERSION = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8')).version;
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -48,6 +52,9 @@ const { values: args } = parseArgs({
     notes: { type: 'string' },
     'notes-en': { type: 'string' },
     'notes-file': { type: 'string' },
+    json: { type: 'boolean', default: false },
+    'print-notes': { type: 'boolean', default: false },
+    'skip-upload': { type: 'boolean', default: false },
     rollout: { type: 'string' },
     manual: { type: 'boolean', default: false },
     commit: { type: 'boolean', default: true },
@@ -138,13 +145,59 @@ function newestApk() {
   return best?.full ?? null;
 }
 
-function releaseNotes() {
+/**
+ * Release notes for the current version, taken from CHANGELOG.md when the CLI
+ * does not provide them. Myket shows these to users in the "what's new" box,
+ * so an empty changelog is almost always a mistake.
+ */
+function parseChangelog(version) {
+  const file = join(REPO_ROOT, 'CHANGELOG.md');
+  if (!existsSync(file)) return null;
+  const lines = readFileSync(file, 'utf8').split(/\r?\n/);
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const start = lines.findIndex((line) => new RegExp(`^##\\s+v?${escaped}(\\s|$)`).test(line));
+  if (start === -1) return null;
+
+  const sections = { fa: [], en: [] };
+  let current = 'fa';
+  for (let i = start + 1; i < lines.length; i += 1) {
+    if (/^##\s/.test(lines[i])) break;
+    const heading = lines[i].match(/^###\s+(.*)$/);
+    if (heading) {
+      current = /^(en|english)\b/i.test(heading[1].trim()) ? 'en' : 'fa';
+      continue;
+    }
+    sections[current].push(lines[i]);
+  }
+
+  const notes = { fa: sections.fa.join('\n').trim(), en: sections.en.join('\n').trim() };
+  return notes.fa || notes.en ? notes : null;
+}
+
+function resolveNotes() {
+  const changelog = parseChangelog(VERSION);
+  let fa = (args.notes ?? '').trim();
+  let en = (args['notes-en'] ?? '').trim();
+  const source = [];
+
   if (args['notes-file']) {
     const file = resolve(process.cwd(), args['notes-file']);
     if (!existsSync(file)) fail(`--notes-file not found: ${file}`);
-    return readFileSync(file, 'utf8').trim();
+    fa = readFileSync(file, 'utf8').trim();
+    source.push(basename(file));
+  } else if (fa) {
+    source.push('--notes');
   }
-  return (args.notes ?? '').trim();
+
+  if (!fa && changelog?.fa) {
+    fa = changelog.fa;
+    source.push(`CHANGELOG.md ${VERSION} (fa)`);
+  }
+  if (!en && changelog?.en) {
+    en = changelog.en;
+    source.push(`CHANGELOG.md ${VERSION} (en)`);
+  }
+  return { fa, en, source };
 }
 
 async function myketFetch(url, { method, token, body, headers = {} }) {
@@ -189,6 +242,10 @@ async function listBundles(token) {
   const { res, json, text } = await myketFetch(url, { method: 'GET', token });
   if (!res.ok) fail(describeFailure({ res, text, json }));
   const releases = json?.releases ?? [];
+  if (args.json) {
+    console.log(JSON.stringify(json ?? {}, null, 2));
+    return;
+  }
   if (!releases.length) {
     warn('No bundles found for this package.');
     return;
@@ -196,14 +253,18 @@ async function listBundles(token) {
   for (const release of releases) {
     console.log(`\n  • ${release.title ?? '(بدون عنوان)'}  [${release.status ?? '?'}]  id=${release.id ?? '-'}`);
     for (const v of release.versions ?? []) {
-      const notes = (v.translationInfos ?? [])
-        .map((t) => `${t.language}: ${String(t.description ?? '').replace(/\s+/g, ' ').slice(0, 80)}`)
-        .join(' | ');
       console.log(
         `      v${v.versionNumber} (code ${v.versionCode}) ${v.approvalState ?? ''} ` +
           `${v.cpuArch ?? ''} ${v.fileSize ? Math.round(v.fileSize / 1048576) + 'MB' : ''}`
       );
-      if (notes) console.log(`      ${notes}`);
+      const infos = v.translationInfos ?? [];
+      if (!infos.length) {
+        warn('notes: (none)');
+      }
+      for (const t of infos) {
+        const body = String(t.description ?? '').replace(/\s+/g, ' ').trim();
+        console.log(`      notes[${t.language}]: ${body ? body.slice(0, 300) : '(empty)'}`);
+      }
     }
   }
 }
@@ -216,14 +277,14 @@ async function revertBundle(token) {
   ok('Reverted.');
 }
 
-async function setBundleInfo(token, notes) {
+async function setBundleInfo(token, notes, notesEn) {
   log('Step 1/3 — bundle info', `title="${title}", rollout=${rollout}%`);
   const payload = {
     title,
     stagedRolloutPercent: rollout,
     translationInfos: [
       { language: 'fa', description: notes },
-      ...(args['notes-en'] ? [{ language: 'en', description: args['notes-en'] }] : []),
+      ...(notesEn ? [{ language: 'en', description: notesEn }] : []),
     ],
   };
   if (args['dry-run']) {
@@ -278,6 +339,14 @@ async function commitBundle(token, notes) {
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
+  // Used by CI to render release-notes.md straight from CHANGELOG.md.
+  if (args['print-notes']) {
+    const { fa } = resolveNotes();
+    if (!fa) fail(`No release notes found for version ${VERSION} (CHANGELOG.md / --notes).`);
+    process.stdout.write(fa.endsWith('\n') ? fa : `${fa}\n`);
+    return;
+  }
+
   const token = readToken();
 
   if (args.status) return listBundles(token);
@@ -286,14 +355,14 @@ async function main() {
   const apkPaths = (args.apk?.length ? args.apk : [newestApk()].filter(Boolean)).map((p) =>
     resolve(process.cwd(), p)
   );
-  if (!apkPaths.length) {
+  if (!apkPaths.length && !args['skip-upload']) {
     fail('No release APK found. Build one first (npm run android:offline -- -Variant release) or pass --apk <path>.');
   }
   for (const apk of apkPaths) {
     if (!existsSync(apk)) fail(`APK not found: ${apk}`);
   }
 
-  const notes = releaseNotes();
+  const { fa: notes, en: notesEn, source: notesSource } = resolveNotes();
   console.log(`\n\x1b[1mPublishing to Myket\x1b[0m`);
   console.log(`    package : ${pkgName}`);
   console.log(`    title   : ${title}`);
@@ -304,14 +373,24 @@ async function main() {
     console.log(`    apk     : ${apk}`);
     console.log(`              ${mb} MB  sha256:${sha.slice(0, 16)}…`);
   }
-  if (notes) console.log(`    notes   : ${notes.replace(/\s+/g, ' ').slice(0, 120)}`);
+  if (notes) {
+    console.log(`    notes   : ${notes.replace(/\s+/g, ' ').slice(0, 120)}`);
+    if (notesSource.length) console.log(`    source  : ${notesSource.join(', ')}`);
+  } else {
+    warn('No release notes: --notes, --notes-file and CHANGELOG.md are all empty.');
+  }
+  if (notesEn) console.log(`    notes en: ${notesEn.replace(/\s+/g, ' ').slice(0, 120)}`);
 
   if (!args['dry-run'] && !(await confirm('\nSubmit this release to Myket for review?'))) {
     fail('Aborted.');
   }
 
-  await setBundleInfo(token, notes);
-  for (const apk of apkPaths) await uploadApk(token, apk);
+  await setBundleInfo(token, notes, notesEn);
+  if (args['skip-upload']) {
+    warn('Skipped APK upload (--skip-upload): this bundle keeps the file Myket already has.');
+  } else {
+    for (const apk of apkPaths) await uploadApk(token, apk);
+  }
   if (args.commit) await commitBundle(token, notes);
   else warn('Skipped commit (--no-commit). The bundle stays in "JustCreated" until you submit it.');
 
