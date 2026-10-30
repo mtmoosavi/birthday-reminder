@@ -8,6 +8,12 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     backgroundColor: '#FFF7F5',
   },
+  ios: {
+    // The web layer handles the notch/home-indicator insets itself via
+    // env(safe-area-inset-*), so the WebView must fill the screen.
+    contentInset: 'never',
+    backgroundColor: '#FFF7F5',
+  },
   plugins: {
     LocalNotifications: {
       smallIcon: 'ic_stat_birthday',

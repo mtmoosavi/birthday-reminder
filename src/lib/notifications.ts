@@ -22,6 +22,15 @@ export interface Birthday {
 const CHANNEL_ID = 'birthdays';
 const MAX_ID = 2_000_000_000;
 
+const platform = Capacitor.getPlatform();
+const isAndroid = platform === 'android';
+
+/**
+ * iOS keeps at most 64 pending local notifications and silently drops the
+ * overflow, so we schedule the soonest ones. Android is far more generous.
+ */
+const MAX_PENDING = isAndroid ? 500 : 64;
+
 /** Stable 32-bit-ish integer id derived from a birthday id + offset. */
 function notificationId(birthdayId: string, offset: number): number {
   let hash = 0;
@@ -34,7 +43,7 @@ function notificationId(birthdayId: string, offset: number): number {
 
 /** Android notification channel — created once, safe to call repeatedly. */
 export async function ensureChannel(): Promise<void> {
-  if (!isNative) return;
+  if (!isNative || !isAndroid) return;
   try {
     await LocalNotifications.createChannel({
       id: CHANNEL_ID,
@@ -152,8 +161,7 @@ export async function syncScheduledNotifications(
         id,
         title,
         body,
-        channelId: CHANNEL_ID,
-        smallIcon: 'ic_stat_birthday',
+        ...(isAndroid ? { channelId: CHANNEL_ID, smallIcon: 'ic_stat_birthday' } : {}),
         schedule: {
           on: {
             month: when.getMonth() + 1,
@@ -164,16 +172,20 @@ export async function syncScheduledNotifications(
           every: 'year' as const,
           allowWhileIdle: true,
         },
-        extra: { birthdayId: b.id, name: b.name, offset },
+        extra: { birthdayId: b.id, name: b.name, offset, when: when.getTime() },
       });
     }
   }
 
   if (!notifications.length) return { scheduled: 0 };
 
+  // Keep the soonest reminders so iOS never has to drop them for us.
+  notifications.sort((a, b) => Number(a.extra?.when ?? 0) - Number(b.extra?.when ?? 0));
+  const pending = notifications.slice(0, MAX_PENDING);
+
   try {
-    await LocalNotifications.schedule({ notifications });
-    return { scheduled: notifications.length };
+    await LocalNotifications.schedule({ notifications: pending });
+    return { scheduled: pending.length };
   } catch {
     return { scheduled: 0 };
   }
@@ -192,8 +204,7 @@ export async function sendTestNotification(): Promise<boolean> {
           id: notificationId('test', Math.floor(Math.random() * 1000)),
           title: '🎂 یادآور تولد فعال است',
           body: 'این یک اعلان آزمایشی است — یادآورهای واقعی در زمان مقرر ارسال می‌شوند.',
-          channelId: CHANNEL_ID,
-          smallIcon: 'ic_stat_birthday',
+          ...(isAndroid ? { channelId: CHANNEL_ID, smallIcon: 'ic_stat_birthday' } : {}),
         },
       ],
     });

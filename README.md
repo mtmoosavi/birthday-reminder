@@ -75,6 +75,20 @@ npm run android:offline                          # APK آزمایشی (debug)
 > **مهم:** فایل `keystore/release.keystore` و رمزهای آن را جای امن نگه دارید.
 > گم شدن آن یعنی ناتوانی در آپدیت برنامه در بازار/مایکت.
 
+## ساخت اپلیکیشن iPhone / iOS build
+
+همان کد React با Capacitor روی iOS هم اجرا می‌شود و برنامه کاملاً آفلاین می‌ماند.
+
+```bash
+npm ci
+npm run ios:sync      # ساخت وب + cap sync ios + همگام‌سازی نسخه
+npm run ios:open      # باز کردن پروژه در Xcode
+```
+
+> ⚠️ ساخت و امضای نسخه‌ی iOS فقط روی **macOS + Xcode** ممکن است.
+> جزئیات کامل (آیکون، TestFlight، محدودیت ۶۴ اعلان iOS و نکته‌ی انتشار از ایران):
+> [`docs/IOS.md`](docs/IOS.md)
+
 ## ساختار پروژه
 
 ```
@@ -89,15 +103,18 @@ src/
     settings.ts               بارگذاری/ذخیره تنظیمات
     utils.ts                  cn()
 android/                      پروژه بومی Capacitor (Android)
+ios/                          پروژه بومی Capacitor (iOS)
 docs/
   PRIVACY_POLICY.md           سیاست حریم خصوصی (برای فروشگاه)
   STORE_LISTING.md            متن و اطلاعات فروشگاه بازار/مایکت
   PUBLISHING_CHECKLIST.md     چک‌لیست انتشار
   PUBLISHING_AUTOMATION.md    انتشار خودکار در مایکت (API) و راهنمای توکن‌ها
+  IOS.md                      راهنمای ساخت و انتشار نسخه‌ی iPhone
 scripts/
   generate-icons.mjs          ساخت آیکون‌ها از تصویر اصلی
   generate-store-assets.mjs   ساخت تصاویر فروشگاه
   publish-myket.mjs           ارسال APK به مایکت از طریق API رسمی
+  sync-ios-version.mjs        همگام‌سازی نسخه با پروژه‌ی Xcode
 store-assets/                 تصاویر آماده برای آپلود در فروشگاه
 ```
 

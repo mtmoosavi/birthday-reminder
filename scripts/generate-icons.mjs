@@ -15,6 +15,7 @@ import {
   onBackground,
   adaptiveForeground,
   whiteSilhouette,
+  pasteCentered,
 } from './png-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -25,6 +26,7 @@ const SOURCE = process.env.ICON_SOURCE
   : join(root, 'Colorful Birthday Cake Icon.png');
 const ANDROID_RES = join(root, 'android', 'app', 'src', 'main', 'res');
 const PUBLIC_DIR = join(root, 'public');
+const IOS_ASSETS = join(root, 'ios', 'App', 'App', 'Assets.xcassets');
 
 const DENSITIES = {
   mdpi: 48,
@@ -78,6 +80,15 @@ function main() {
   write(join(PUBLIC_DIR, 'icon-192.png'), onBackground(192, img, BG, 0.86));
   write(join(PUBLIC_DIR, 'icon-512.png'), onBackground(512, img, BG, 0.86));
   write(join(PUBLIC_DIR, 'icon-maskable-512.png'), onBackground(512, img, BG, 0.66));
+
+  // iOS (Capacitor single-size AppIcon + universal splash). Skipped when the
+  // ios platform has not been added yet. App icons must be fully opaque.
+  if (existsSync(IOS_ASSETS)) {
+    write(join(IOS_ASSETS, 'AppIcon.appiconset', 'AppIcon-512@2x.png'), onBackground(1024, img, BG, 0.82));
+    for (const name of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png']) {
+      write(join(IOS_ASSETS, 'Splash.imageset', name), pasteCentered(2732, 2732, img, BG, 0.2));
+    }
+  }
 
   console.log('Icons generated.');
 }
